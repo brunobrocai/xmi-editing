@@ -1,3 +1,4 @@
+
 def rename_attribute(tree, old_attribute_name, new_attribute_name):
     """Renames a specified attribute
     in all occurences in all elements of a tree.

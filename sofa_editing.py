@@ -1,3 +1,6 @@
+import re
+
+
 def positional_insert(original_string, insertion, position):
     """Inserts a string into another string at a given position.
 
@@ -145,5 +148,54 @@ def sofa_string_delete(tree, namespaces, deletion_len, position):
     sofa.set('sofaString', new_string)
 
     tree = adjust_annotations(tree, namespaces, -deletion_len, position)
+
+    return tree
+
+
+def next_regex_sofa_coordinates(regex, tree, namespaces):
+
+    sofa = tree.find('cas:Sofa', namespaces)
+    sofa_string = sofa.get('sofaString')
+
+    match = re.search(regex, sofa_string)
+
+    if match:
+        coords = match.start(), match.end()
+        return coords
+    return False
+
+
+def sofa_regex_delete(regex, tree, namespaces):
+
+    match = next_regex_sofa_coordinates(regex, tree, namespaces)
+    while match:
+        tree = sofa_string_delete(
+            tree,
+            namespaces,
+            match[1]-match[0],
+            match[0]
+        )
+        match = next_regex_sofa_coordinates(regex, tree, namespaces)
+
+    return tree
+
+
+def sofa_regex_replace(regex, insertion, tree, namespaces):
+
+    match = next_regex_sofa_coordinates(regex, tree, namespaces)
+    while match:
+        tree = sofa_string_delete(
+            tree,
+            namespaces,
+            match[1]-match[0],
+            match[0]
+        )
+        tree = sofa_string_insert(
+            tree,
+            namespaces,
+            insertion,
+            match[0]
+        )
+        match = next_regex_sofa_coordinates(regex, tree, namespaces)
 
     return tree
