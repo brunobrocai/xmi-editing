@@ -6,11 +6,11 @@ import element_editing as ed
 tree, root = xh.parse_xmi('test.xmi')
 namespaces = xh.get_namespaces('test.xmi')
 
-tree = ed.rename_attribute_value(
+tree = se.sofa_regex_replace(
+    "###",
+    "+++++",
     tree,
-    'Protagonistinnen',
-    'Adresassat:in',
-    'Adressat:in'
+    namespaces
 )
 
 xh.default_write(tree, 'output.xmi')

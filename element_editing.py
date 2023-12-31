@@ -1,3 +1,4 @@
+
 def rename_attribute(tree, old_attribute_name, new_attribute_name):
     root = tree.getroot()
 
