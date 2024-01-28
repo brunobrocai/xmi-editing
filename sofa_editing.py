@@ -154,48 +154,99 @@ def sofa_string_delete(tree, namespaces, deletion_len, position):
 
 def next_regex_sofa_coordinates(regex, tree, namespaces):
 
-    sofa = tree.find('cas:Sofa', namespaces)
-    sofa_string = sofa.get('sofaString')
+    start = 0
+    while True:
+        sofa = tree.find('cas:Sofa', namespaces)
+        sofa_string = sofa.get('sofaString')
+        match_ = re.search(regex, sofa_string[start:])
+        if not match_:
+            break
 
-    match = re.search(regex, sofa_string)
-
-    if match:
-        coords = match.start(), match.end()
-        return coords
-    return False
+        start += match_.start()
+        end = start + len(match_.group())
+        yield start, end
+        start = end - 5
 
 
 def sofa_regex_delete(regex, tree, namespaces):
 
-    match = next_regex_sofa_coordinates(regex, tree, namespaces)
-    while match:
+    for match_ in next_regex_sofa_coordinates(regex, tree, namespaces):
         tree = sofa_string_delete(
             tree,
             namespaces,
-            match[1]-match[0],
-            match[0]
+            match_[1]-match_[0],
+            match_[0]
         )
-        match = next_regex_sofa_coordinates(regex, tree, namespaces)
+        match_ = next_regex_sofa_coordinates(regex, tree, namespaces)
 
     return tree
 
 
 def sofa_regex_replace(regex, insertion, tree, namespaces):
 
-    match = next_regex_sofa_coordinates(regex, tree, namespaces)
-    while match:
+    for match_ in next_regex_sofa_coordinates(regex, tree, namespaces):
         tree = sofa_string_delete(
             tree,
             namespaces,
-            match[1]-match[0],
-            match[0]
+            match_[1]-match_[0],
+            match_[0]
         )
         tree = sofa_string_insert(
             tree,
             namespaces,
             insertion,
-            match[0]
+            match_[0]
         )
-        match = next_regex_sofa_coordinates(regex, tree, namespaces)
+        match_ = next_regex_sofa_coordinates(regex, tree, namespaces)
+
+    return tree
+
+
+def sofa_string_capture(tree, namespaces, deletion_len, position):
+    """Deletes chars in the sofaString, adjusting annotations accordingly.
+
+    Args:
+        tree (ElementTree object): tree whose sofaString and annotations will
+            be adjusted
+        namespaces (dict): namespace dictionary the tree uses
+        deletion (int): amount of chars to delete
+        position (positive int): position/slice at which
+            the deletion takes place
+
+    Returns:
+        ElementTree object: tree with adjusted      sofaString and annotations
+        str: deleted part of the sofaString
+    """
+    sofa = tree.find('cas:Sofa', namespaces)
+    sofa_string = sofa.get('sofaString')
+    deletion = sofa_string[position:position+deletion_len]
+    new_string = positional_delete(
+        sofa_string, deletion_len, position
+    )
+    sofa.set('sofaString', new_string)
+
+    tree = adjust_annotations(tree, namespaces, -deletion_len, position)
+
+    return tree, deletion
+
+
+def sofa_regex_replace_if(regex, capture, replacement, tree, namespaces):
+
+    for match_ in next_regex_sofa_coordinates(regex, tree, namespaces):
+        tree, deletion = sofa_string_capture(
+            tree,
+            namespaces,
+            match_[1]-match_[0],
+            match_[0]
+        )
+
+        insertion = deletion.replace(capture, replacement)
+
+        tree = sofa_string_insert(
+            tree,
+            namespaces,
+            insertion,
+            match_[0]
+        )
 
     return tree
