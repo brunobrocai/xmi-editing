@@ -67,7 +67,8 @@ def positional_delete(original_string, deletion_len, position):
     return modified_string
 
 
-def adjust_annotations(tree, namespaces, change_len, position):
+def adjust_annotations(tree, namespaces, change_len, position,
+                       annotations=None):
     """Adjusts annotations to correctly map onto a modified sofaString.
 
     Modification can take two forms: insertion and deletion.
@@ -85,7 +86,8 @@ def adjust_annotations(tree, namespaces, change_len, position):
         ElementTree object: tree with adjusted annotations
     """
 
-    annotations = ['type5:Token', 'type5:Sentence', 'custom:Span']
+    if annotations is None:
+        annotations = ['type5:Token', 'type5:Sentence', 'custom:Span']
 
     for annotation in annotations:
         for element in tree.findall(annotation, namespaces):
@@ -142,6 +144,7 @@ def sofa_string_delete(tree, namespaces, deletion_len, position):
     Returns:
         ElementTree object: tree with adjusted sofaString and annotations
     """
+
     sofa = tree.find('cas:Sofa', namespaces)
     sofa_string = sofa.get('sofaString')
     new_string = positional_delete(sofa_string, deletion_len, position)
