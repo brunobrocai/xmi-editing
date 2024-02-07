@@ -24,10 +24,10 @@ def parse_xmi(filepath):
 def get_namespaces(filepath):
     """Creates a namespace dict for an xmi file."""
     xmi_filename_extension(filepath)
-    namespaces = dict([node for _, node in ET.iterparse(
-        filepath,
-        events=['start-ns']
-    )])
+    namespaces = {
+        prefix: uri for _, (prefix, uri)
+        in ET.iterparse(filepath, events=['start-ns'])
+    }
     for prefix, uri in namespaces.items():
         ET.register_namespace(prefix, uri)
     return namespaces
@@ -35,4 +35,38 @@ def get_namespaces(filepath):
 
 def default_write(tree, filepath):
     """Creates an xmi file from a tree with default params for the project."""
-    tree.write(filepath, encoding="utf-8", xml_declaration=True)
+    tree.write(filepath, 
+               encoding="utf-8", 
+               xml_declaration=True,
+               method='html')
+
+
+def get_sofa_string(tree, namespaces):
+    """Gets the sofaString from an xmi file."""
+    return tree.find('cas:Sofa', namespaces).get('sofaString')
+
+
+def get_position_before_category(tree, element):
+
+    root = tree.getroot()
+
+    for i, child in enumerate(root):
+        if child.tag == element:
+            return i
+
+    return None
+
+
+def get_position_before_element(tree, element, attribute_dict):
+
+    root = tree.getroot()
+
+    for i, child in enumerate(root):
+        if child == element:
+            child_attribs = child.attrib
+            for key in child.attrib:
+                if child_attribs[key] != attribute_dict[key]:
+                    break
+            return i
+
+    return None

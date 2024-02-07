@@ -54,3 +54,19 @@ def get_span(text, coordinates):
     except TypeError:
         print("Error getting span.")
         return None
+
+
+def narrow_coords(coordinates, text, whitespace=' \n\t'):
+    """
+    Returns the coordinates of the span in the text.
+    """
+
+    start = coordinates[0]
+    end = coordinates[1]
+
+    while text[start] in whitespace:
+        start += 1
+    while text[end] in whitespace:
+        end -= 1
+
+    return (start, end)
