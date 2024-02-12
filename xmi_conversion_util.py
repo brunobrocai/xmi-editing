@@ -24,27 +24,29 @@ def inside_of(coord_outer, coord_inner):
     return False
 
 
-def protagonist_associations(moral_spans_list, protagonist_spans_list):
-    """
-    Some moralizing spans have no instance of a specific phenomenon
-    (such as protagonists), others have many. It can be useful (when looking
-    for specific examples) to have a way to find them. This function should
-    make it easy to find all instances of a phenomenon.
-    """
+def sentence_associations(category, tree, namespaces):
 
-    protagonist_dict = {}
+    sentences = tree.findall('type5:Sentence', namespaces)
+    annotations = [
+        span for span in tree.findall('custom:Span', namespaces)
+        if span.get(category)
+    ]
 
-    for moralization in moral_spans_list:
-        protagonist_dict[moralization] = []
-    for protagonist in protagonist_spans_list:
-        moral_span = inside_of_list(
-            moral_spans_list, protagonist["Coordinates"])
-        try:
-            protagonist_dict[moral_span].append(protagonist["Coordinates"])
-        except KeyError:
-            print("".join(("KeyError: ", str(protagonist["Coordinates"]))))
+    associations_dict = {
+        sentence: [] for sentence in sentences
+    }
+    for sentence in sentences:
+        sentence_range = (
+            int(sentence.get('begin')), int(sentence.get('end'))
+        )
+        for annotation in annotations:
+            moral_range = (
+                int(annotation.get('begin')), int(annotation.get('end'))
+            )
+            if inside_of(sentence_range, moral_range):
+                associations_dict[sentence].append(annotation)
 
-    return protagonist_dict
+    return associations_dict
 
 
 def get_span(text, coordinates):
@@ -57,16 +59,22 @@ def get_span(text, coordinates):
 
 
 def narrow_coords(coordinates, text, whitespace=' \n\t'):
-    """
-    Returns the coordinates of the span in the text.
-    """
 
     start = coordinates[0]
     end = coordinates[1]
 
     while text[start] in whitespace:
         start += 1
-    while text[end] in whitespace:
+    while text[end-1] in whitespace:
         end -= 1
 
     return (start, end)
+
+
+def get_coords(element):
+    try:
+        coords = [int(element.get('begin')), int(element.get('end'))]
+        return coords
+    except Exception as e:
+        print(e)
+        return None

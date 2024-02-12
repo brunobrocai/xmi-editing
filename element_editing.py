@@ -1,4 +1,6 @@
 import xml.etree.ElementTree as ET
+import xmi_conversion_util as xcu
+import xmi_handling as xh
 
 
 def rename_attribute(tree, old_attribute_name, new_attribute_name):
@@ -149,5 +151,94 @@ def update_ids(tree, namespaces):
     index = tree.find('cas:View', namespaces)
     new_members = ' '.join([str(x) for x in range(10, id_counter, 10)])
     index.set('members', new_members)
+
+    return tree
+
+
+def set_sofa_one(tree, namespaces):
+    tree.find('cas:Sofa', namespaces).set('{'+namespaces['xmi']+'}id', '1')
+    return tree
+
+
+def is_inside_coords(coords, possible_inside):
+    inside = [False, False, False]  # begin_inside, end_inside, wrapped_outside
+    if possible_inside[0] > coords[1]:
+        return False
+    if possible_inside[0] <= coords[1] and possible_inside[0] >= coords[0]:
+        inside[0] = True
+    if possible_inside[1] <= coords[1] and possible_inside[1] >= coords[0]:
+        inside[1] = True
+    if possible_inside[0] < coords[0] and possible_inside[1] > coords[1]:
+        inside[2] = True
+    return inside
+
+
+def push_out_annotations(tree, namespaces, bouncer_tag, annotation_tags):
+
+    # We need all of this later
+    bouncers = tree.findall(bouncer_tag, namespaces)
+    print(len(bouncers))
+    annotations = []
+    for tag in annotation_tags:
+        annotations.extend(tree.findall(tag, namespaces))
+    text = xh.get_sofa_string(tree, namespaces)
+    root = tree.getroot()
+
+    # Sort annotations by begin attribute
+    annotations.sort(key=lambda x: int(x.get('begin')))
+    bouncers.sort(key=lambda x: int(x.get('begin')))
+
+    for bouncer in bouncers:
+        bouncer_range = (int(bouncer.get('begin')), int(bouncer.get('end')))
+        for annotation in annotations:
+            annotation_range = [
+                int(annotation.get('begin')), int(annotation.get('end'))
+            ]
+            inside = is_inside_coords(bouncer_range, annotation_range)
+
+            # We don't need to check the rest of the annotations
+            # if the annotations come after the bouncer (they are sorted)
+            if inside is False:
+                break
+
+            # If the annotation wraps arround the bouncer, we must split it
+            if inside[2]:
+                tag = annotation.tag
+                attrib = annotation.attrib.copy()
+                position = xh.get_position_before_element(
+                    tree, tag, attrib
+                )
+                attrib['begin'] = str(bouncer_range[1])
+                tree = add_element(
+                    tree, tag, attrib, position+1
+                )
+                annotation.set('end', str(bouncer_range[0] - 1))
+
+            # Push the annotations out of bouncer range where possible
+            if inside[0] and inside[1]:
+                root.remove(annotation)
+            if inside[0] and not inside[1]:
+                annotation_range[0] = bouncer_range[1]
+                new_coords = xcu.narrow_coords(annotation_range, text)
+                annotation.set('begin', str(new_coords[0]))
+            if inside[1] and not inside[0]:
+                annotation_range[1] = bouncer_range[0] - 1
+                new_coords = xcu.narrow_coords(annotation_range, text)
+                annotation.set('end', str(new_coords[1]))
+
+    return tree
+
+
+def narrow_all_tag_cords(tag, tree, namespaces):
+    text = xh.get_sofa_string(tree, namespaces)
+    root = tree.getroot()
+
+    for element in root.findall(tag, namespaces):
+        if 'begin' in element.attrib and 'end' in element.attrib:
+            begin = int(element.get('begin'))
+            end = int(element.get('end'))
+            new_coords = xcu.narrow_coords((begin, end), text)
+            element.set('begin', str(new_coords[0]))
+            element.set('end', str(new_coords[1]))
 
     return tree

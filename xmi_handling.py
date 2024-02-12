@@ -35,10 +35,10 @@ def get_namespaces(filepath):
 
 def default_write(tree, filepath):
     """Creates an xmi file from a tree with default params for the project."""
-    tree.write(filepath, 
-               encoding="utf-8", 
+    tree.write(filepath,
+               encoding="utf-8",
                xml_declaration=True,
-               method='html')
+               method='xml')
 
 
 def get_sofa_string(tree, namespaces):
@@ -62,11 +62,16 @@ def get_position_before_element(tree, element, attribute_dict):
     root = tree.getroot()
 
     for i, child in enumerate(root):
-        if child == element:
+        if child.tag == element:
             child_attribs = child.attrib
-            for key in child.attrib:
-                if child_attribs[key] != attribute_dict[key]:
-                    break
-            return i
+            hit = True
+            for key in attribute_dict:
+                try:
+                    if child_attribs[key] != attribute_dict[key]:
+                        hit = False
+                except KeyError:
+                    hit = False
+            if hit:
+                return i
 
     return None
