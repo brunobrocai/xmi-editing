@@ -5,11 +5,11 @@ import complex_operations as co
 import regexes
 
 
-file_ = 'limit_test.xmi'
+FILE_ = 'limit_test.xmi'
 
 
-tree, root = xh.parse_xmi(file_)
-namespaces = xh.get_namespaces(file_)
+tree, root = xh.parse_xmi(FILE_)
+namespaces = xh.get_namespaces(FILE_)
 
 tree = ed.rename_annotation(
     tree, 'Protagonistinnen', 'Adresassat:in', 'Adressat:in'
