@@ -177,7 +177,6 @@ def push_out_annotations(tree, namespaces, bouncer_tag, annotation_tags):
 
     # We need all of this later
     bouncers = tree.findall(bouncer_tag, namespaces)
-    print(len(bouncers))
     annotations = []
     for tag in annotation_tags:
         annotations.extend(tree.findall(tag, namespaces))
@@ -240,5 +239,27 @@ def narrow_all_tag_cords(tag, tree, namespaces):
             new_coords = xcu.narrow_coords((begin, end), text)
             element.set('begin', str(new_coords[0]))
             element.set('end', str(new_coords[1]))
+
+    return tree
+
+
+def delete_empty_tags(tree, namespaces):
+    tag_list = tree.findall('custom:Span', namespaces)
+    tag_list += tree.findall('custom:Metadata', namespaces)
+    tag_list += tree.findall('type5:Sentence', namespaces)
+    tag_list += tree.findall('type5:Token', namespaces)
+
+    root = tree.getroot()
+
+    for element in tag_list:
+        try:
+            if (
+                element.get('begin') == element.get('end')
+                or int(element.get('begin')) < 0
+                or int(element.get('end')) < 0
+            ):
+                root.remove(element)
+        except ValueError:
+            pass
 
     return tree
