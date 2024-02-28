@@ -24,7 +24,8 @@ def print_dups(spans, text):
     dups = []
     uniqs = set()
     for sent in spans:
-        spantext = xcu.get_span(text, (int(sent.get('begin')), int(sent.get('end'))))
+        span_range = (int(sent.get('begin')), int(sent.get('end')))
+        spantext = xcu.get_span(text, span_range)
         if spantext not in uniqs:
             uniqs.add(spantext)
         else:

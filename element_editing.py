@@ -296,11 +296,17 @@ def delete_outside_sentence(tree, namespaces):
     root = tree.getroot()
 
     for tag in tag_list:
+
         inside = False
+
         for sentence in sentences:
-            if int(tag.get('begin')) >= int(sentence.get('begin')) and int(tag.get('end')) <= int(sentence.get('end')):
+            if (
+                int(tag.get('begin')) >= int(sentence.get('begin'))
+                and int(tag.get('end')) <= int(sentence.get('end'))
+            ):
                 inside = True
                 break
+
         if not inside:
             print(tag.tag, tag.get('begin'), tag.get('end'))
             root.remove(tag)

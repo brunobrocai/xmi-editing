@@ -87,5 +87,4 @@ tree = ed.update_ids(tree, namespaces)
 tree = ed.set_sofa_one(tree, namespaces)
 tree = ed.delete_group_annotation(tree, namespaces)
 
-
 xh.default_write(tree, f'{GENRE}_optimized.xmi')

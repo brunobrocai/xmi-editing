@@ -145,6 +145,11 @@ def include_punctuation(tree, namespaces):
     return tree
 
 
+def element_is_moralization(element):
+    attempt = element.get('KAT1MoralisierendesSegment')
+    return attempt == 'Moralisierung'
+
+
 def remove_double_moralizations(tree, namespaces):
     annotations = [
         span for span in tree.findall('custom:Span', namespaces)
@@ -153,7 +158,7 @@ def remove_double_moralizations(tree, namespaces):
     root = tree.getroot()
     span_set = set()
     for annotation in annotations:
-        coords = tuple( xcu.get_coords(annotation))
+        coords = tuple(xcu.get_coords(annotation))
         if coords in span_set:
             duplicates = [
                 span for span in tree.findall('custom:Span', namespaces)
@@ -162,11 +167,11 @@ def remove_double_moralizations(tree, namespaces):
             ]
             non_generic = [
                 duplicate for duplicate in duplicates
-                if duplicate.get('KAT1MoralisierendesSegment') != 'Moralisierung'
+                if not element_is_moralization(duplicate)
             ]
             for duplicate in duplicates:
                 if (
-                    duplicate.get('KAT1MoralisierendesSegment') == 'Moralisierung'
+                    element_is_moralization(duplicate)
                     and len(non_generic) > 0
                 ):
                     root.remove(duplicate)

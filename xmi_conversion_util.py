@@ -76,9 +76,6 @@ def narrow_coords(coordinates, text, whitespace=' \n\t'):
     return (start, end)
 
 
-
-
-
 def get_coords(element):
     try:
         coords = [int(element.get('begin')), int(element.get('end'))]

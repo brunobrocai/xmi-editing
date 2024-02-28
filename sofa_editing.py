@@ -1,5 +1,4 @@
 import re
-import xmi_handling as xh
 
 
 def positional_insert(original_string, insertion, position):
