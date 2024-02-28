@@ -1,4 +1,5 @@
 import re
+import xmi_handling as xh
 
 
 def positional_insert(original_string, insertion, position):
@@ -96,7 +97,7 @@ def adjust_annotations(tree, namespaces, change_len, position,
                     'begin',
                     str(int(element.get('begin')) + change_len)
                 )
-            if int(element.get('end')) >= position:
+            if int(element.get('end')) >= position + 1:
                 element.set(
                     'end',
                     str(int(element.get('end')) + change_len)
@@ -205,51 +206,16 @@ def sofa_regex_replace(regex, insertion, tree, namespaces):
     return tree
 
 
-def sofa_string_capture(tree, namespaces, deletion_len, position):
-    """Deletes chars in the sofaString, adjusting annotations accordingly.
-
-    Args:
-        tree (ElementTree object): tree whose sofaString and annotations will
-            be adjusted
-        namespaces (dict): namespace dictionary the tree uses
-        deletion (int): amount of chars to delete
-        position (positive int): position/slice at which
-            the deletion takes place
-
-    Returns:
-        ElementTree object: tree with adjusted      sofaString and annotations
-        str: deleted part of the sofaString
-    """
-    sofa = tree.find('cas:Sofa', namespaces)
-    sofa_string = sofa.get('sofaString')
-    deletion = sofa_string[position:position+deletion_len]
-    new_string = positional_delete(
-        sofa_string, deletion_len, position
-    )
-    sofa.set('sofaString', new_string)
-
-    tree = adjust_annotations(tree, namespaces, -deletion_len, position)
-
-    return tree, deletion
-
-
 def sofa_regex_replace_if(regex, capture, replacement, tree, namespaces):
 
     for match_ in next_regex_sofa_coordinates(regex, tree, namespaces):
-        tree, deletion = sofa_string_capture(
-            tree,
-            namespaces,
-            match_[1]-match_[0],
-            match_[0]
+        sofa = tree.find('cas:Sofa', namespaces)
+        sofa_string = sofa.get('sofaString')
+        new_string = (
+            sofa_string[:match_[0]]
+            + sofa_string[match_[0]:match_[1]].replace(capture, replacement)
+            + sofa_string[match_[1]:]
         )
-
-        insertion = deletion.replace(capture, replacement)
-
-        tree = sofa_string_insert(
-            tree,
-            namespaces,
-            insertion,
-            match_[0]
-        )
+        sofa.set('sofaString', new_string)
 
     return tree

@@ -63,12 +63,20 @@ def narrow_coords(coordinates, text, whitespace=' \n\t'):
     start = coordinates[0]
     end = coordinates[1]
 
-    while text[start] in whitespace:
+    if start > len(text):
+        start = len(text) - 1
+    if end > len(text):
+        end = len(text)
+
+    while text[start] in whitespace and start < len(text) - 1:
         start += 1
     while text[end-1] in whitespace:
         end -= 1
 
     return (start, end)
+
+
+
 
 
 def get_coords(element):

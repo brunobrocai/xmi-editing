@@ -254,12 +254,80 @@ def delete_empty_tags(tree, namespaces):
     for element in tag_list:
         try:
             if (
-                element.get('begin') == element.get('end')
+                int(element.get('begin')) >= int(element.get('end'))
                 or int(element.get('begin')) < 0
                 or int(element.get('end')) < 0
             ):
+                # print(element.tag, element.get('begin'), element.get('end'))
                 root.remove(element)
         except ValueError:
             pass
+
+    return tree
+
+
+def delete_overlap_tokens(tree, namespaces):
+    token_list = tree.findall('type5:Token', namespaces)
+    to_delete = set()
+    root = tree.getroot()
+
+    for i, token in enumerate(token_list):
+        token_range = (int(token.get('begin')), int(token.get('end')))
+        if token_range[1] - token_range[0] <= 2:
+            for prev_token in token_list[:i]+token_list[i+1:]:
+                if (
+                        int(prev_token.get('end')) >= token_range[1]
+                        and int(prev_token.get('begin')) <= token_range[0]
+                ):
+                    to_delete.add(token)
+
+    for token in to_delete:
+        root.remove(token)
+
+    return tree
+
+
+def delete_outside_sentence(tree, namespaces):
+    tag_list = tree.findall('custom:Span', namespaces)
+    tag_list += tree.findall('custom:Metadata', namespaces)
+    tag_list += tree.findall('type5:Token', namespaces)
+    sentences = tree.findall('type5:Sentence', namespaces)
+
+    root = tree.getroot()
+
+    for tag in tag_list:
+        inside = False
+        for sentence in sentences:
+            if int(tag.get('begin')) >= int(sentence.get('begin')) and int(tag.get('end')) <= int(sentence.get('end')):
+                inside = True
+                break
+        if not inside:
+            print(tag.tag, tag.get('begin'), tag.get('end'))
+            root.remove(tag)
+
+    return tree
+
+
+def delete_group_annotation(tree, namespaces):
+    annos = tree.findall('custom:Span', namespaces)
+    protagonists = [anno for anno in annos if anno.get('Protagonistinnen3')]
+
+    for protagonist in protagonists:
+        protagonist.attrib.pop('Protagonistinnen3')
+
+    return tree
+
+
+def delete_whitespace_tokens(tree, namespaces):
+    tokens = tree.findall('type5:Token', namespaces)
+    root = tree.getroot()
+    sofa_string = xh.get_sofa_string(tree, namespaces)
+
+    for token in tokens:
+        if sofa_string[
+            int(token.get('begin')):
+            int(token.get('end'))
+        ] == ' ':
+            root.remove(token)
 
     return tree

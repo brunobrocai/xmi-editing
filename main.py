@@ -5,7 +5,7 @@ import complex_operations as co
 import regexes
 
 
-GENRE = 'Gerichtsurteile-neg-AW-neu-optimiert-BB'
+GENRE = 'Leserbriefe-pos-BB-neu-optimiert-RR'
 FILE_ = f'/home/bruno/Desktop/Databases/Moralization/Zeitungstexte/{GENRE}.xmi'
 
 
@@ -19,7 +19,14 @@ tree = ed.rename_annotation(
 tree = se.sofa_regex_replace_if(
     regexes.ZEITUNG_PATTERN,
     "###",
-    "+++++",
+    "+++",
+    tree,
+    namespaces
+)
+
+tree = se.sofa_regex_replace(
+    " ###",
+    '',
     tree,
     namespaces
 )
@@ -30,6 +37,7 @@ tree = se.sofa_regex_replace(
     tree,
     namespaces
 )
+
 
 before = xh.get_position_before_category(
     tree, '{'+namespaces['custom']+'}Span')
@@ -71,8 +79,13 @@ tree = co.include_punctuation(tree, namespaces)
 tree = co.remove_double_moralizations(tree, namespaces)
 
 tree = ed.delete_empty_tags(tree, namespaces)
+tree = ed.delete_whitespace_tokens(tree, namespaces)
+tree = ed.delete_overlap_tokens(tree, namespaces)
+tree = ed.delete_outside_sentence(tree, namespaces)
 
 tree = ed.update_ids(tree, namespaces)
 tree = ed.set_sofa_one(tree, namespaces)
+tree = ed.delete_group_annotation(tree, namespaces)
+
 
 xh.default_write(tree, f'{GENRE}_optimized.xmi')
