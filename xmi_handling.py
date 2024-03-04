@@ -75,3 +75,10 @@ def get_position_before_element(tree, element, attribute_dict):
                 return i
 
     return None
+
+
+def get_everything(filepath):
+    tree, root = parse_xmi(filepath)
+    namespaces = get_namespaces(filepath)
+
+    return tree, root, namespaces
