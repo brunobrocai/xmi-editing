@@ -1,5 +1,6 @@
-import xmi_handling as xh
-import xmi_conversion_util as xcu
+from xml.etree import ElementTree as ET
+from automatic_editing import xmi_handling as xh
+from automatic_editing import xmi_conversion_util as xcu
 
 
 def print_all_spans(span_list, text):
@@ -34,6 +35,22 @@ def print_dups(spans, text):
     for dup in dups:
         print(dup)
         print('-'*30)
+
+
+def print_tokens(file):
+    tree = ET.parse(file)
+    namespaces = xh.get_namespaces(file)
+
+    corpus = xh.get_sofa_string(tree, namespaces)
+    tokens = tree.findall('type5:Token', namespaces)
+
+    for token in tokens:
+        trange = (
+            int(token.get('begin')),
+            int(token.get('end'))
+        )
+        print(corpus[trange[0]:trange[1]], end='')
+        print('|', end='')
 
 
 print_all_spans(sents, text)

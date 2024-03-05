@@ -1,8 +1,10 @@
-import xmi_handling as xh
-import sofa_editing as se
-import element_editing as ed
-import complex_operations as co
-import regexes
+from automatic_editing import (
+    xmi_handling as xh,
+    sofa_editing as se,
+    element_editing as ed,
+    complex_operations as co,
+    regexes
+)
 
 
 GENRE = 'Leserbriefe-pos-BB-neu-optimiert-RR'
