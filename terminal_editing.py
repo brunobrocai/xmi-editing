@@ -91,8 +91,8 @@ def prompt_moralizations(filepath, wait=True):
         print(
             'The span is:\n',
             '+' * 30 + '\n',
-            xcu.get_span(sofa_string, issue_coords),
-            '\n' + '+' * 30 + '\n\n',
+            xcu.get_span(sofa_string, issue_coords).strip(),
+            '\n' + '+' * 30 + '\n',
             sep=''
         )
 
@@ -103,8 +103,8 @@ def prompt_moralizations(filepath, wait=True):
         print(
             'The entire context is:\n',
             '+' * 30 + '\n',
-            xcu.get_span(sofa_string, context_coords),
-            '\n' + '+' * 30 + '\n\n',
+            xcu.get_span(sofa_string, context_coords).strip(),
+            '\n' + '+' * 30 + '\n',
             sep=''
         )
 
@@ -116,7 +116,7 @@ def prompt_moralizations(filepath, wait=True):
         sleepif(wait, 0.2)
 
         print(
-            f'\n\nYour input was {user_input}.',
+            f'\nYour input was {user_input}.',
             f'This corresponds to "{translation}".',
             'Please make sure this is correct.\n'
         )
@@ -128,11 +128,11 @@ def prompt_moralizations(filepath, wait=True):
         if confirmation:
             next_issue.set('KAT1MoralisierendesSegment', translation)
             xh.default_write(tree, filepath)
-            print('Correction written to file!\n\n')
+            print('Correction written to file!\n')
 
         else:
             print('Nothing was changed.')
-            print('You will be prompted to re-do the annotation.\n\n')
+            print('You will be prompted to re-do the annotation.\n')
 
         print('-' * 70, '\n')
         sleepif(wait, 2)
@@ -162,6 +162,8 @@ def input_to_protagonist_anno(letter, category):
                 return 'Benefizient:in'
             case 'F':
                 return 'Forderer:in'
+            case 'M':
+                return 'Malefizient:in'
             case 'KB':
                 return 'Kein Bezug'
             case _:
@@ -184,7 +186,8 @@ def get_protagonist_prompt(protagonist_tuple):
         ('Protagonistinnen', 'Rolle'),
         ('Protagonistinnen2', 'Gruppe')
     )
-    valid_letters1 = ({'A', 'B', 'F', 'KB'}, {'sG', 'Ist', 'Ivd', 'O'})
+    valid_letters = ({'A', 'B', 'F', 'M', 'KB'}, {'sG', 'Ist', 'Ivd', 'O'})
+    new_annotation = 'XXXXXXXXX'
     for i, category in enumerate(protagonist_tuple):
         if not category:
             print(f'Label {categories[i][1]} is missing.')
@@ -200,7 +203,33 @@ def get_protagonist_prompt(protagonist_tuple):
                     print(f'If the span is "{input_to_protagonist_anno(letter, i)}", type {letter}')
 
                 new_annotation = input("What type of protagonist is present here? ")
-            return None
+    return new_annotation
+
+
+def get_possible_malefiz():
+    valid_letters = {'A', 'B', 'F', 'M', 'KB'}
+    new_annotation = 'XXXXXXXXX'
+    while new_annotation not in valid_letters:
+        if new_annotation != 'XXXXXXXXX':
+            print('You did not enter a valid option.')
+        print(
+            'Consider whether the label might have some relevance for the moralization. '
+            'Specifically, it could be a "Malefizient:in".\n'
+        )
+        print(
+            'You have the following options:'
+        )
+        for letter in valid_letters:
+            print(
+                f'If the span is "{input_to_protagonist_anno(letter, 0)}", type {letter}'
+            )
+        print(
+            '(If you think the label "Kein Bezug" is correct, '
+            'type KB and nothing will be changed.)\n'
+        )
+        new_annotation = input("What type of protagonist is present here? ")
+    return new_annotation
+
 
 
 def prompt_missing(filepath, wait=True):
@@ -225,8 +254,8 @@ def prompt_missing(filepath, wait=True):
         print(
             'The protagonist span is:\n',
             '+' * 30 + '\n',
-            xcu.get_span(sofa_string, issue_coords),
-            '\n' + '+' * 30 + '\n\n',
+            xcu.get_span(sofa_string, issue_coords).strip(),
+            '\n' + '+' * 30 + '\n',
             sep=''
         )
 
@@ -237,20 +266,97 @@ def prompt_missing(filepath, wait=True):
         print(
             'The entire context is:\n',
             '+' * 30 + '\n',
-            xcu.get_span(sofa_string, context_coords),
-            '\n' + '+' * 30 + '\n\n',
+            xcu.get_span(sofa_string, context_coords).strip(),
+            '\n' + '+' * 30 + '\n',
             sep=''
         )
 
         sleepif(wait, 0.1)
 
-        user_input = get_moral_prompt()
-        translation = input_to_annotation(user_input)
+        category = 0 if not protagonist_tuple(next_issue)[0] else 1
+        user_input = get_protagonist_prompt(protagonist_tuple(next_issue))
+        translation = input_to_protagonist_anno(user_input, category)
 
         sleepif(wait, 0.2)
 
         print(
-            f'\n\nYour input was {user_input}.',
+            f'\nYour input was {user_input}.',
+            f'This corresponds to "{translation}".',
+            'Please make sure this is correct.\n'
+        )
+
+        confirmation = get_confirmation()
+
+        sleepif(wait, 0.2)
+
+        if confirmation and category == 0:
+            next_issue.set('Protagonistinnen', translation)
+            xh.default_write(tree, filepath)
+            print('Correction written to file!\n')
+        elif confirmation and category == 1:
+            next_issue.set('Protagonistinnen2', translation)
+            xh.default_write(tree, filepath)
+            print('Correction written to file!\n')
+
+        else:
+            print('Nothing was changed.')
+            print('You will be prompted to re-do the annotation.\n')
+
+        print('-' * 70, '\n')
+        sleepif(wait, 2)
+
+
+def prompt_bezug(filepath, wait=True):
+
+    seen_bezuglos = set()
+
+    while True:
+        tree, _, namespaces = xh.get_everything(filepath)
+        sofa_string = xh.get_sofa_string(tree, namespaces)
+        annotations = tree.findall('custom:Span', namespaces)
+
+        faulty_moralizations = [
+            annotation for annotation in annotations
+            if annotation.get('Protagonistinnen') == "Kein Bezug"
+            and annotation not in seen_bezuglos
+        ]
+
+        if len(faulty_moralizations) < 1:
+            print(f"Done with {filepath}!")
+            break
+
+        next_issue = faulty_moralizations[0]
+        issue_coords = xcu.get_coords(next_issue)
+        print('Found a protagonist with "Kein Bezug".\n')
+        print(
+            'The protagonist span is:\n',
+            '+' * 30 + '\n',
+            xcu.get_span(sofa_string, issue_coords).strip(),
+            '\n' + '+' * 30 + '\n',
+            sep=''
+        )
+
+        sleepif(wait, 0.1)
+
+        context = get_context(next_issue, tree, namespaces)
+        context_coords = xcu.get_coords(context)
+        print(
+            'The entire context is:\n',
+            '+' * 30 + '\n',
+            xcu.get_span(sofa_string, context_coords).strip(),
+            '\n' + '+' * 30 + '\n',
+            sep=''
+        )
+
+        sleepif(wait, 0.1)
+
+        user_input = get_possible_malefiz()
+        translation = input_to_protagonist_anno(user_input, 0)
+
+        sleepif(wait, 0.2)
+
+        print(
+            f'\nYour input was {user_input}.',
             f'This corresponds to "{translation}".',
             'Please make sure this is correct.\n'
         )
@@ -260,18 +366,19 @@ def prompt_missing(filepath, wait=True):
         sleepif(wait, 0.2)
 
         if confirmation:
-            next_issue.set('KAT1MoralisierendesSegment', translation)
+            next_issue.set('Protagonistinnen', translation)
             xh.default_write(tree, filepath)
-            print('Correction written to file!\n\n')
+            print('Correction written to file!\n')
+            seen_bezuglos.add(next_issue)
 
         else:
             print('Nothing was changed.')
-            print('You will be prompted to re-do the annotation.\n\n')
+            print('You will be prompted to re-do the annotation.\n')
 
         print('-' * 70, '\n')
         sleepif(wait, 2)
 
 
 if __name__ == '__main__':
-    FILEPATH = '/home/bruno/Desktop/GitProjects/xmi-editing/terminal_editing/terminal_editing.py'
-    prompt_moralizations(FILEPATH)
+    FILEPATH = '/home/brunobrocai/Desktop/Code/xmi-editing/outputs/Gerichtsurteile-neg-AW-neu-optimiert-BB_optimized.xmi'
+    prompt_bezug(FILEPATH)
