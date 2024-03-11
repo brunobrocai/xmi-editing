@@ -1,3 +1,6 @@
-ZEITUNG_PATTERN = r" *[A-Z0-9]{3,}/.*?S.(\n| )[A-Z]?[0-9]+.*?\n?###"
 PLENAR_PATTERN = r" *[A-Z0-9]{3,}/.*Plenarprotokoll,.*[0-9]{4} ###"
+PLENAR_PATTERN_EDIT = r" *[A-Z0-9]{3,}/.*Plenarprotokoll,.*[0-9]{4} \+\+\+"
+ZEITUNG_PATTERN = r" *[A-Z0-9]{3,}/.*?S.(\n| )[A-Z]?[0-9]+.*?\n?###"
 ZEITUNG_PATTERN_EDIT = r" *[A-Z0-9]{3,}/.*?S.(\n| )[A-Z]?[0-9]+.*?\n?\+\+\+"
+WIKI_PATTERN = r" *WDD11/.*?In: Wikipedia.*? Wikipedia, [0-9]{4} ###"
+WIKI_PATTERN_EDIT = r" *WDD11/.*?In: Wikipedia.*? Wikipedia, [0-9]{4} \+\+\+"
