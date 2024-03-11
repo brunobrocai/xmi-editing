@@ -1,7 +1,7 @@
-import element_editing as ed
-import xmi_handling as xh
-import sofa_editing as se
-import xmi_conversion_util as xcu
+from . import element_editing as ed
+from . import xmi_handling as xh
+from . import sofa_editing as se
+from . import xmi_conversion_util as xcu
 
 
 def add_metadata_tag(

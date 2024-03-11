@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
-import xmi_conversion_util as xcu
-import xmi_handling as xh
+from . import xmi_conversion_util as xcu
+from . import xmi_handling as xh
 
 
 def rename_attribute(tree, old_attribute_name, new_attribute_name):
