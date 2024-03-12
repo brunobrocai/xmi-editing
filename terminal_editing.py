@@ -318,7 +318,8 @@ def prompt_bezug(filepath, wait=True):
         faulty_moralizations = [
             annotation for annotation in annotations
             if annotation.get('Protagonistinnen') == "Kein Bezug"
-            and annotation not in seen_bezuglos
+            and (annotation.get('begin'), annotation.get('end'))
+            not in seen_bezuglos
         ]
 
         if len(faulty_moralizations) < 1:
@@ -369,7 +370,9 @@ def prompt_bezug(filepath, wait=True):
             next_issue.set('Protagonistinnen', translation)
             xh.default_write(tree, filepath)
             print('Correction written to file!\n')
-            seen_bezuglos.add(next_issue)
+            seen_bezuglos.add(
+                (next_issue.get('begin'), next_issue.get('end'))
+            )
 
         else:
             print('Nothing was changed.')
