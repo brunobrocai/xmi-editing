@@ -175,6 +175,8 @@ def input_to_protagonist_anno(letter, category):
             return 'Institution'
         case 'Ivd':
             return 'Individuum'
+        case 'Mn':
+            return 'Mensch'
         case 'O':
             return 'OTHER'
         case _:
@@ -186,7 +188,7 @@ def get_protagonist_prompt(protagonist_tuple):
         ('Protagonistinnen', 'Rolle'),
         ('Protagonistinnen2', 'Gruppe')
     )
-    valid_letters = ({'A', 'B', 'F', 'M', 'KB'}, {'sG', 'Ist', 'Ivd', 'O'})
+    valid_letters = ({'A', 'B', 'F', 'M', 'KB'}, {'sG', 'Ist', 'Ivd', 'Mn', 'O'})
     new_annotation = 'XXXXXXXXX'
     for i, category in enumerate(protagonist_tuple):
         if not category:
@@ -383,5 +385,5 @@ def prompt_bezug(filepath, wait=True):
 
 
 if __name__ == '__main__':
-    FILEPATH = '/home/brunobrocai/Desktop/Code/xmi-editing/outputs/Gerichtsurteile-neg-AW-neu-optimiert-BB_optimized.xmi'
-    prompt_bezug(FILEPATH)
+    FILEPATH = '/home/bruno/Desktop/GitProjects/xmi-editing/outputs/Gerichtsurteile-neg-AW-neu-optimiert-BB_optimized.xmi'
+    prompt_missing(FILEPATH)
