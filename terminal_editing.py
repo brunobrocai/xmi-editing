@@ -384,6 +384,136 @@ def prompt_bezug(filepath, wait=True):
         sleepif(wait, 2)
 
 
+def input_to_other_anno(letter):
+    match letter:
+        case 'Pr':
+            return 'Protagonistinnen2'
+        case 'Mw':
+            return 'Moralwerte'
+        case 'SA':
+            return 'KAT2Subjektive_Ausdrcke'
+        case _:
+            raise ValueError('Could not handle annotation input string.')
+
+
+def get_possible_other():
+    valid_letters = {'Pr', 'Mw', 'SA'}
+    new_annotation = 'XXXXXXXXX'
+    while new_annotation not in valid_letters:
+        if new_annotation != 'XXXXXXXXX':
+            print('You did not enter a valid option.')
+        print(
+            'Consider whether this "OTHER" is actually a different type of annotation. '
+            'Specifically, it could be a "Protagonisten-Gruppe", "Moralwerte" or "Subjektiver Ausdruck".\n'
+        )
+        print(
+            'You have the following options:'
+        )
+        for letter in valid_letters:
+            print(
+                f'If the span is "{input_to_other_anno(letter)}", type {letter}'
+            )
+        print('If "OTHER" is correctly annotated already, just type the current label and nothing will be changed.\n')
+        new_annotation = input('What type of "OTHER" is present here? ')
+    return new_annotation
+
+
+def prompt_other(filepath, wait=True):
+    seen_other = set()
+
+    while True:
+        tree, _, namespaces = xh.get_everything(filepath)
+        sofa_string = xh.get_sofa_string(tree, namespaces)
+        annotations = tree.findall('custom:Span', namespaces)
+
+        faulty_moralizations = [
+            annotation for annotation in annotations
+            if (annotation.get('Protagonistinnen2') == "OTHER" or annotation.get('KAT2Subjektive_Ausdrcke') == 'OTHER' or annotation.get('Moralwerte') == 'OTHER')
+            and (annotation.get('begin'), annotation.get('end'))
+            not in seen_other
+        ]
+
+        if len(faulty_moralizations) < 1:
+            print(f"Done with {filepath}!")
+            break
+
+        next_issue = faulty_moralizations[0]
+
+        issue_coords = xcu.get_coords(next_issue)
+        print('Found a span with "OTHER".')
+        print('"OTHER" was annotated in the context of: ', end="")
+        if next_issue.get('Protagonistinnen2') == 'OTHER':
+            print('Protagonistinnen2')
+        elif next_issue.get('KAT2Subjektive_Ausdrcke\n') == 'OTHER':
+            print('KAT2Subjektive_Ausdrcke\n')
+        elif next_issue.get('Moralwerte') == 'OTHER':
+            print('Moralwerte\n')
+        print(
+            'The span is:\n',
+            '+' * 30 + '\n',
+            xcu.get_span(sofa_string, issue_coords).strip(),
+            '\n' + '+' * 30 + '\n',
+            sep=''
+        )
+
+        sleepif(wait, 0.1)
+
+        context = get_context(next_issue, tree, namespaces)
+        context_coords = xcu.get_coords(context)
+        print(
+            'The entire context is:\n',
+            '+' * 30 + '\n',
+            xcu.get_span(sofa_string, context_coords).strip(),
+            '\n' + '+' * 30 + '\n',
+            sep=''
+        )
+
+        sleepif(wait, 0.1)
+
+        user_input = get_possible_other()
+        translation = input_to_other_anno(user_input)
+
+        sleepif(wait, 0.2)
+
+        print(
+            f'\nYour input was {user_input}.',
+            f'This corresponds to "{translation}".',
+            'Please make sure this is correct.\n'
+        )
+
+        confirmation = get_confirmation()
+
+        sleepif(wait, 0.2)
+
+        if confirmation:
+            if translation == 'Protagonistinnen2':
+                next_issue.set('Protagonistinnen2', 'OTHER')
+                next_issue.attrib.pop('KAT2Subjektive_Ausdrcke', None)
+                next_issue.attrib.pop('Moralwerte', None)
+            elif translation == 'Moralwerte':
+                next_issue.set('Moralwerte', 'OTHER')
+                next_issue.attrib.pop('Protagonistinnen2', None)
+                next_issue.attrib.pop('Protagonistinnen', None)
+                next_issue.attrib.pop('KAT2Subjektive_Ausdrcke', None)
+            elif translation == 'KAT2Subjektive_Ausdrcke':
+                next_issue.set('KAT2Subjektive_Ausdrcke', 'OTHER')
+                next_issue.attrib.pop('Protagonistinnen', None)
+                next_issue.attrib.pop('Protagonistinnen2', None)
+                next_issue.attrib.pop('Moralwerte', None)
+            xh.default_write(tree, filepath)
+            print('Correction written to file!\n')
+            seen_other.add(
+                (next_issue.get('begin'), next_issue.get('end'))
+            )
+
+        else:
+            print('Nothing was changed.')
+            print('You will be prompted to re-do the annotation.\n')
+
+        print('-' * 70, '\n')
+        sleepif(wait, 2)
+
+
 if __name__ == '__main__':
-    FILEPATH = '/home/bruno/Desktop/GitProjects/xmi-editing/outputs/Gerichtsurteile-neg-AW-neu-optimiert-BB_optimized.xmi'
-    prompt_missing(FILEPATH)
+    FILEPATH = '/home/brunobrocai/Desktop/Code/xmi-editing/inputs/Gerichtsurteile-neg-AW-neu-optimiert-BB.xmi'
+    prompt_other(FILEPATH)
