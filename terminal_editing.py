@@ -444,7 +444,7 @@ def prompt_other(filepath, wait=True):
         print('"OTHER" was annotated in the context of: ', end="")
         if next_issue.get('Protagonistinnen2') == 'OTHER':
             print('Protagonistinnen2')
-        elif next_issue.get('KAT2Subjektive_Ausdrcke\n') == 'OTHER':
+        elif next_issue.get('KAT2Subjektive_Ausdrcke') == 'OTHER':
             print('KAT2Subjektive_Ausdrcke\n')
         elif next_issue.get('Moralwerte') == 'OTHER':
             print('Moralwerte\n')
@@ -517,5 +517,5 @@ def prompt_other(filepath, wait=True):
 
 
 if __name__ == '__main__':
-    FILEPATH = '/home/brunobrocai/Desktop/Code/xmi-editing/inputs/Gerichtsurteile-neg-AW-neu-optimiert-BB.xmi'
+    FILEPATH = '/home/brunobrocai/Desktop/Wiki-pos_vergoldet.xmi'
     prompt_other(FILEPATH)
