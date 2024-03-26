@@ -448,6 +448,8 @@ def prompt_other(filepath, wait=True):
             print('KAT2Subjektive_Ausdrcke\n')
         elif next_issue.get('Moralwerte') == 'OTHER':
             print('Moralwerte\n')
+        else:
+            print(next_issue.attrib)
         print(
             'The span is:\n',
             '+' * 30 + '\n',
